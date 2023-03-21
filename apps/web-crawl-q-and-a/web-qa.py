@@ -20,6 +20,9 @@ from openai.embeddings_utils import distances_from_embeddings, cosine_similarity
 # Regex pattern to match a URL
 HTTP_URL_PATTERN = r'^http[s]*://.+'
 
+# openai api key definition
+os.environ['OPENAI_API_KEY'] = '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'
+
 # Define root domain to crawl
 domain = "openai.com"
 full_url = "https://openai.com/"
@@ -134,10 +137,16 @@ def crawl(url):
         print(url) # for debugging and to see the progress
 
         # Save text from the url to a <url>.txt file
-        with open('text/'+local_domain+'/'+url[8:].replace("/", "_") + ".txt", "w", encoding="UTF-8") as f:
+        with open('text/'+local_domain+'/'+url[8:].replace("/", "_").replace("?", "_") + ".txt", "w", encoding="UTF-8") as f:
 
             # Get the text from the URL using BeautifulSoup
-            soup = BeautifulSoup(requests.get(url).text, "html.parser")
+            try:
+                url_text = requests.get(url).text
+            except requests.exceptions.RequestException as e:
+                # catastrophic error. bail.
+                # raise SystemExit(e)
+                continue
+            soup = BeautifulSoup(url_text, "html.parser")
 
             # Get the text but remove the tags
             text = soup.get_text()
@@ -288,6 +297,9 @@ df.n_tokens.hist()
 # Note that you may run into rate limit issues depending on how many files you try to embed
 # Please check out our rate limit guide to learn more on how to handle this: https://platform.openai.com/docs/guides/rate-limits
 
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+print("embeddings create")
 df['embeddings'] = df.text.apply(lambda x: openai.Embedding.create(input=x, engine='text-embedding-ada-002')['data'][0]['embedding'])
 df.to_csv('processed/embeddings.csv')
 df.head()
@@ -366,7 +378,7 @@ def answer_question(
         # Create a completions using the questin and context
         response = openai.Completion.create(
             prompt=f"Answer the question based on the context below, and if the question can't be answered based on the context, say \"I don't know\"\n\nContext: {context}\n\n---\n\nQuestion: {question}\nAnswer:",
-            temperature=0,
+            temperature=0.6,
             max_tokens=max_tokens,
             top_p=1,
             frequency_penalty=0,
@@ -386,3 +398,5 @@ def answer_question(
 print(answer_question(df, question="What day is it?", debug=False))
 
 print(answer_question(df, question="What is our newest embeddings model?"))
+
+print(answer_question(df, question="What is openai?"))
