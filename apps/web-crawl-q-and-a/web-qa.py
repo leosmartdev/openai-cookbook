@@ -21,7 +21,7 @@ from openai.embeddings_utils import distances_from_embeddings, cosine_similarity
 HTTP_URL_PATTERN = r'^http[s]*://.+'
 
 # openai api key definition
-os.environ['OPENAI_API_KEY'] = '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'
+os.environ['OPENAI_API_KEY'] = 'sk-*****************************************x8'
 
 # Define root domain to crawl
 domain = "openai.com"
